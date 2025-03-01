@@ -1,5 +1,6 @@
 package com.tasks.swiftcode_api.services;
 
+import com.tasks.swiftcode_api.exceptions.BankNotFoundException;
 import com.tasks.swiftcode_api.models.BankEntity;
 import com.tasks.swiftcode_api.repositories.SwiftCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,38 @@ public class SwiftApiService {
     @Autowired
     SwiftCodeRepository repository;
 
+
+    public BankEntity getBankEntityBySwiftCode(String swiftCode) {
+        BankEntity foundBank = repository.findById(ifEightDigitSwiftToHeadquartersSwift(swiftCode))
+                .orElseThrow(() -> new BankNotFoundException("No bank found with SWIFT code: " + swiftCode));
+        boolean isHeadquartersValue = isBranchAHeadquarters(foundBank.getSwiftCode());
+        return BankEntity.builder()
+                .address(foundBank.getAddress())
+                .bankName(foundBank.getBankName())
+                .countryISO2(foundBank.getCountryISO2())
+                .countryName(foundBank.getCountryName())
+                .isHeadquarter(isHeadquartersValue)
+                .swiftCode(foundBank.getSwiftCode())
+                .branches(isHeadquartersValue ? findAllBranchesByHeadquartersSwiftCode(swiftCode) : null)
+                .build();
+    }
+
+    // If the provided SWIFT code is 8 characters (main SWIFT code), append "XXX" to return the headquarters SWIFT code.
+    private String ifEightDigitSwiftToHeadquartersSwift(String swiftCode) {
+        if(swiftCode.length() == 8) {
+            swiftCode += "XXX";
+        }
+        return swiftCode;
+    }
+
+    private List<BankEntity> findAllBranchesByHeadquartersSwiftCode(String swiftCode) {
+        String mainSwiftCodeOfHQ = swiftCode.substring(0, 8);
+        return repository
+                .findAll()
+                .stream()
+                .filter(bank -> bank.getSwiftCode().startsWith(mainSwiftCodeOfHQ) && !isBranchAHeadquarters(bank.getSwiftCode()))
+                .collect(Collectors.toList());
+    }
     public List<BankEntity> saveAllBankEntitiesFromListToDatabase(List<BankEntity> bankEntities) {
         return bankEntities.stream()
                 .peek(this::prepareBankEntityBeforeSave)

@@ -16,4 +16,10 @@ public class SwiftApiController {
     @Autowired
     private SwiftApiService swiftApiService;
 
+    @GetMapping("/{swift-code}")
+    @ResponseBody
+    public ResponseEntity<BankEntity> getDetails(@PathVariable("swift-code") String swiftCode) {
+        BankEntity found = swiftApiService.getBankEntityBySwiftCode(swiftCode.toUpperCase());
+        return ResponseEntity.ok(found);
+    }
 }
