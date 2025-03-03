@@ -1,12 +1,15 @@
 package com.tasks.swiftcode_api.services;
 
 import com.tasks.swiftcode_api.exceptions.BankNotFoundException;
+import com.tasks.swiftcode_api.exceptions.CountryNotFoundException;
 import com.tasks.swiftcode_api.models.BankEntity;
+import com.tasks.swiftcode_api.models.Country;
 import com.tasks.swiftcode_api.repositories.SwiftCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +31,28 @@ public class SwiftApiService {
                 .swiftCode(foundBank.getSwiftCode())
                 .branches(isHeadquartersValue ? findAllBranchesByHeadquartersSwiftCode(swiftCode) : null)
                 .build();
+    }
+
+    public Country findAllSwiftCodesWithDetailsByCountryISO2(String countryISO2) {
+        List<BankEntity> foundBankEntities = findBankEntitiesByCountryISO2(countryISO2);
+        if (foundBankEntities.isEmpty()) {
+            throw new CountryNotFoundException("Country with " + countryISO2 + " ISO2 code - not found.");
+        }
+        return Country.builder()
+                .countryISO2(countryISO2)
+                .countryName(countryIso2ToName(countryISO2))
+                .swiftCodes(foundBankEntities)
+                .build();
+    }
+
+    public Map<String,String> deleteBankEntityFromDatabase(String swiftCode, String bankName, String countryISO2) {
+        BankEntity foundBank = getBankEntityBySwiftCode(swiftCode);
+        if (foundBank.getBankName().equals(bankName) && foundBank.getCountryISO2().equals(countryISO2)) {
+            repository.delete(foundBank);
+            return Map.of("message", "SWIFT Code deleted successfully");
+        } else {
+            return Map.of("message", "Input data does not match!");
+        }
     }
 
     // If the provided SWIFT code is 8 characters (main SWIFT code), append "XXX" to return the headquarters SWIFT code.
@@ -77,5 +102,15 @@ public class SwiftApiService {
             return "XXX".equals(suffix);
         }
         return false;
+    }
+
+    private List<BankEntity> findBankEntitiesByCountryISO2(String countryISO2) {
+        return repository.findAllBanksByCountryISO2(countryISO2);
+    }
+
+    private String countryIso2ToName(String countryIso2) {
+        return repository.findFirstByCountryISO2(countryIso2)
+                .map(BankEntity::getCountryName)
+                .orElse(null);
     }
 }
