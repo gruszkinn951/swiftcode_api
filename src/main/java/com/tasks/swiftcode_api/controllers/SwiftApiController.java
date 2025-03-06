@@ -38,4 +38,10 @@ public class SwiftApiController {
         Map<String, String> response = swiftApiService.deleteBankEntityFromDatabase(swiftCode.toUpperCase(), bankName, countryISO2.toUpperCase());
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> addSwiftCode(@RequestBody BankEntity bankEntity) {
+        return swiftApiService.addBankEntityToDatabase(bankEntity);
+    }
 }
