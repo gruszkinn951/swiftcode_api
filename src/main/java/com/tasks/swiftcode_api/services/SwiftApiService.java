@@ -2,10 +2,12 @@ package com.tasks.swiftcode_api.services;
 
 import com.tasks.swiftcode_api.exceptions.BankNotFoundException;
 import com.tasks.swiftcode_api.exceptions.CountryNotFoundException;
+import com.tasks.swiftcode_api.exceptions.InvalidDataException;
 import com.tasks.swiftcode_api.models.BankEntity;
 import com.tasks.swiftcode_api.models.Country;
 import com.tasks.swiftcode_api.repositories.SwiftCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -52,6 +54,32 @@ public class SwiftApiService {
             return Map.of("message", "SWIFT Code deleted successfully");
         } else {
             return Map.of("message", "Input data does not match!");
+        }
+    }
+
+    public ResponseEntity<Map<String,String>> addBankEntityToDatabase(BankEntity bankEntity) {
+        try {
+            uppercaseSwiftISO2CountryOfBankEntity(bankEntity);
+            String swiftCode = bankEntity.getSwiftCode();
+            if ((swiftCode.length() != 11 && swiftCode.length() != 8) || !swiftCode.matches("[A-Z0-9]+")) {
+                throw new InvalidDataException("Invalid SWIFT code: must be 8 or 11 alphanumeric characters.");
+            }
+            if (swiftCode.length() == 8) {
+                if (bankEntity.isHeadquarter()) {
+                    bankEntity.setSwiftCode(ifEightDigitSwiftToHeadquartersSwift(swiftCode));
+                }
+                else {
+                    throw new InvalidDataException("Invalid branch's SWIFT code: must be 11 alphanumeric characters.");
+                }
+            }
+            if (bankEntity.isHeadquarter() ^ isBranchAHeadquarters(bankEntity.getSwiftCode())) {
+                throw new InvalidDataException("isHeadquarter input field is " + bankEntity.isHeadquarter()
+                        + " while SWIFT code indicates it is " + isBranchAHeadquarters(bankEntity.getSwiftCode()));
+            }
+            repository.save(bankEntity);
+            return ResponseEntity.ok(Map.of("message", "SWIFT Code added successfully"));
+        } catch (Exception e) {
+            throw new InvalidDataException(e.getMessage());
         }
     }
 
