@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 public class MapperToDTO {
     public CountryDTO toCountryDTO(String countryISO2, String countryName, List<BankEntity> bankEntities) {
         List<ReducedBankDTO> swiftCodes = bankEntities.stream()
+                .filter(bank -> bank.getCountryISO2().equals(countryISO2))
                 .map(this::toReducedBankDTO)
                 .collect(Collectors.toList());
 

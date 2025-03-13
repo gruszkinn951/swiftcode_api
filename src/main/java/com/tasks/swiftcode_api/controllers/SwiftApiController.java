@@ -33,10 +33,8 @@ public class SwiftApiController {
 
     @DeleteMapping("/{swift-code}")
     @ResponseBody
-    public ResponseEntity<Map<String, String>> deleteSwiftCode(@PathVariable("swift-code") String swiftCode,
-                                                               @RequestParam("bankName") String bankName,
-                                                               @RequestParam("countryISO2") String countryISO2) {
-        Map<String, String> response = swiftApiService.deleteBankEntityFromDatabase(swiftCode.toUpperCase(), bankName, countryISO2.toUpperCase());
+    public ResponseEntity<Map<String, String>> deleteSwiftCode(@PathVariable("swift-code") String swiftCode) {
+        Map<String, String> response = swiftApiService.deleteBankEntityFromDatabase(swiftCode.toUpperCase());
         return ResponseEntity.ok(response);
     }
 
