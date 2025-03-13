@@ -28,20 +28,7 @@ public class SwiftApiService {
         BankEntity foundBank = repository.findById(ifEightDigitSwiftToHeadquartersSwift(swiftCode))
                 .orElseThrow(() -> new BankNotFoundException("No bank found with SWIFT code: " + swiftCode));
         foundBank.setBranches(findAllBranchesByHeadquartersSwiftCode(swiftCode));
-        //boolean isHeadquartersValue = isBranchAHeadquarters(foundBank.getSwiftCode());
         return mapper.toBankDTO(foundBank);
-        /*
-        return BankEntity.builder()
-                .address(foundBank.getAddress())
-                .bankName(foundBank.getBankName())
-                .countryISO2(foundBank.getCountryISO2())
-                .countryName(foundBank.getCountryName())
-                .isHeadquarter(isHeadquartersValue)
-                .swiftCode(foundBank.getSwiftCode())
-                .branches(isHeadquartersValue ? findAllBranchesByHeadquartersSwiftCode(swiftCode) : null)
-                .build();
-
-         */
     }
 
     public CountryDTO findAllSwiftCodesWithDetailsByCountryISO2(String countryISO2) {
@@ -49,27 +36,14 @@ public class SwiftApiService {
         if (foundBankEntities.isEmpty()) {
             throw new CountryNotFoundException("CountryDTO with " + countryISO2 + " ISO2 code - not found.");
         }
-
         return mapper.toCountryDTO(countryISO2, countryIso2ToName(countryISO2), foundBankEntities);
-        /*
-        return CountryDTO.builder()
-                .countryISO2(countryISO2)
-                .countryName(countryIso2ToName(countryISO2))
-                .swiftCodes(foundBankEntities)
-                .build();
-
-         */
     }
 
-    public Map<String,String> deleteBankEntityFromDatabase(String swiftCode, String bankName, String countryISO2) {
+    public Map<String,String> deleteBankEntityFromDatabase(String swiftCode) {
         BankEntity foundBank = repository.findById(ifEightDigitSwiftToHeadquartersSwift(swiftCode))
                 .orElseThrow(() -> new BankNotFoundException("No bank found with SWIFT code: " + swiftCode));
-        if (foundBank.getBankName().equals(bankName) && foundBank.getCountryISO2().equals(countryISO2)) {
-            repository.delete(foundBank);
-            return Map.of("message", "SWIFT Code deleted successfully");
-        } else {
-            return Map.of("message", "Input data does not match!");
-        }
+        repository.delete(foundBank);
+        return Map.of("message", "SWIFT Code deleted successfully");
     }
 
     public ResponseEntity<Map<String,String>> addBankEntityToDatabase(BankEntity bankEntity) {
@@ -83,7 +57,7 @@ public class SwiftApiService {
         }
     }
 
-    private void swiftCodeValidationOfBank (BankEntity bankEntity) {
+    public void swiftCodeValidationOfBank (BankEntity bankEntity) {
         String swiftCode = bankEntity.getSwiftCode();
         if (repository.existsBySwiftCode(swiftCode)) {
             throw new ResourceAlreadyExistsException("Invalid SWIFT code: already exists.");

@@ -1,6 +1,5 @@
 package com.tasks.swiftcode_api.models.DTO;
 
-import com.tasks.swiftcode_api.models.BankEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
