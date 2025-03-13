@@ -1,5 +1,6 @@
-package com.tasks.swiftcode_api.models;
+package com.tasks.swiftcode_api.models.DTO;
 
+import com.tasks.swiftcode_api.models.BankEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Country {
+public class CountryDTO {
     private String countryISO2;
     private String countryName;
-    private List<BankEntity> swiftCodes;
+    private List<ReducedBankDTO> swiftCodes;
 }

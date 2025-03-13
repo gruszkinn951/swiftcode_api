@@ -3,8 +3,11 @@ package com.tasks.swiftcode_api.services;
 import com.tasks.swiftcode_api.exceptions.BankNotFoundException;
 import com.tasks.swiftcode_api.exceptions.CountryNotFoundException;
 import com.tasks.swiftcode_api.exceptions.InvalidDataException;
+import com.tasks.swiftcode_api.exceptions.ResourceAlreadyExistsException;
 import com.tasks.swiftcode_api.models.BankEntity;
-import com.tasks.swiftcode_api.models.Country;
+import com.tasks.swiftcode_api.models.DTO.BankDTO;
+import com.tasks.swiftcode_api.models.DTO.CountryDTO;
+import com.tasks.swiftcode_api.models.DTO.MapperToDTO;
 import com.tasks.swiftcode_api.repositories.SwiftCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +21,16 @@ import java.util.stream.Collectors;
 public class SwiftApiService {
     @Autowired
     SwiftCodeRepository repository;
+    @Autowired
+    MapperToDTO mapper;
 
-
-    public BankEntity getBankEntityBySwiftCode(String swiftCode) {
+    public BankDTO getBankBySwiftCode(String swiftCode) {
         BankEntity foundBank = repository.findById(ifEightDigitSwiftToHeadquartersSwift(swiftCode))
                 .orElseThrow(() -> new BankNotFoundException("No bank found with SWIFT code: " + swiftCode));
-        boolean isHeadquartersValue = isBranchAHeadquarters(foundBank.getSwiftCode());
+        foundBank.setBranches(findAllBranchesByHeadquartersSwiftCode(swiftCode));
+        //boolean isHeadquartersValue = isBranchAHeadquarters(foundBank.getSwiftCode());
+        return mapper.toBankDTO(foundBank);
+        /*
         return BankEntity.builder()
                 .address(foundBank.getAddress())
                 .bankName(foundBank.getBankName())
@@ -33,22 +40,30 @@ public class SwiftApiService {
                 .swiftCode(foundBank.getSwiftCode())
                 .branches(isHeadquartersValue ? findAllBranchesByHeadquartersSwiftCode(swiftCode) : null)
                 .build();
+
+         */
     }
 
-    public Country findAllSwiftCodesWithDetailsByCountryISO2(String countryISO2) {
+    public CountryDTO findAllSwiftCodesWithDetailsByCountryISO2(String countryISO2) {
         List<BankEntity> foundBankEntities = findBankEntitiesByCountryISO2(countryISO2);
         if (foundBankEntities.isEmpty()) {
-            throw new CountryNotFoundException("Country with " + countryISO2 + " ISO2 code - not found.");
+            throw new CountryNotFoundException("CountryDTO with " + countryISO2 + " ISO2 code - not found.");
         }
-        return Country.builder()
+
+        return mapper.toCountryDTO(countryISO2, countryIso2ToName(countryISO2), foundBankEntities);
+        /*
+        return CountryDTO.builder()
                 .countryISO2(countryISO2)
                 .countryName(countryIso2ToName(countryISO2))
                 .swiftCodes(foundBankEntities)
                 .build();
+
+         */
     }
 
     public Map<String,String> deleteBankEntityFromDatabase(String swiftCode, String bankName, String countryISO2) {
-        BankEntity foundBank = getBankEntityBySwiftCode(swiftCode);
+        BankEntity foundBank = repository.findById(ifEightDigitSwiftToHeadquartersSwift(swiftCode))
+                .orElseThrow(() -> new BankNotFoundException("No bank found with SWIFT code: " + swiftCode));
         if (foundBank.getBankName().equals(bankName) && foundBank.getCountryISO2().equals(countryISO2)) {
             repository.delete(foundBank);
             return Map.of("message", "SWIFT Code deleted successfully");
@@ -60,26 +75,33 @@ public class SwiftApiService {
     public ResponseEntity<Map<String,String>> addBankEntityToDatabase(BankEntity bankEntity) {
         try {
             uppercaseSwiftISO2CountryOfBankEntity(bankEntity);
-            String swiftCode = bankEntity.getSwiftCode();
-            if ((swiftCode.length() != 11 && swiftCode.length() != 8) || !swiftCode.matches("[A-Z0-9]+")) {
-                throw new InvalidDataException("Invalid SWIFT code: must be 8 or 11 alphanumeric characters.");
-            }
-            if (swiftCode.length() == 8) {
-                if (bankEntity.isHeadquarter()) {
-                    bankEntity.setSwiftCode(ifEightDigitSwiftToHeadquartersSwift(swiftCode));
-                }
-                else {
-                    throw new InvalidDataException("Invalid branch's SWIFT code: must be 11 alphanumeric characters.");
-                }
-            }
-            if (bankEntity.isHeadquarter() ^ isBranchAHeadquarters(bankEntity.getSwiftCode())) {
-                throw new InvalidDataException("isHeadquarter input field is " + bankEntity.isHeadquarter()
-                        + " while SWIFT code indicates it is " + isBranchAHeadquarters(bankEntity.getSwiftCode()));
-            }
+            swiftCodeValidationOfBank(bankEntity);
             repository.save(bankEntity);
             return ResponseEntity.ok(Map.of("message", "SWIFT Code added successfully"));
         } catch (Exception e) {
             throw new InvalidDataException(e.getMessage());
+        }
+    }
+
+    private void swiftCodeValidationOfBank (BankEntity bankEntity) {
+        String swiftCode = bankEntity.getSwiftCode();
+        if (repository.existsBySwiftCode(swiftCode)) {
+            throw new ResourceAlreadyExistsException("Invalid SWIFT code: already exists.");
+        }
+        if ((swiftCode.length() != 11 && swiftCode.length() != 8) || !swiftCode.matches("[A-Z0-9]+")) {
+            throw new InvalidDataException("Invalid SWIFT code: must be 8 or 11 alphanumeric characters.");
+        }
+        if (swiftCode.length() == 8) {
+            if (bankEntity.isHeadquarter()) {
+                bankEntity.setSwiftCode(ifEightDigitSwiftToHeadquartersSwift(swiftCode));
+            }
+            else {
+                throw new InvalidDataException("Invalid branch's SWIFT code: must be 11 alphanumeric characters.");
+            }
+        }
+        if (bankEntity.isHeadquarter() ^ isBranchAHeadquarters(bankEntity.getSwiftCode())) {
+            throw new InvalidDataException("isHeadquarter input field is " + bankEntity.isHeadquarter()
+                    + " while SWIFT code indicates it is " + isBranchAHeadquarters(bankEntity.getSwiftCode()));
         }
     }
 

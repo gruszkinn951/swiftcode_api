@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface SwiftCodeRepository extends JpaRepository<BankEntity, String> {
     Optional<BankEntity> findFirstByCountryISO2(String countryISO2);
     List<BankEntity> findAllBanksByCountryISO2(String countryISO2);
+    boolean existsBySwiftCode(String swiftCode);
 }
