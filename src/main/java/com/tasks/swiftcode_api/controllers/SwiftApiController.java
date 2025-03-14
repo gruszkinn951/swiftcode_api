@@ -38,7 +38,7 @@ public class SwiftApiController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/")
+    @PostMapping
     @ResponseBody
     public ResponseEntity<Map<String, String>> addSwiftCode(@RequestBody BankEntity bankEntity) {
         return swiftApiService.addBankEntityToDatabase(bankEntity);
