@@ -1,32 +1,24 @@
-version: '3'
 services:
-  db:
+  postgres:
     image: postgres:latest
     container_name: swift_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: swift_db1
+      POSTGRES_DB: swift_db
     ports:
-      - "5433:5432"
-    networks:
-      - swift-network
+      - "5432:5432"
+    restart: always
 
   app:
     build: .
     container_name: swift-api-app
     ports:
       - "8080:8080"
-    depends_on:
-      - db
     environment:
-      SPRING_PROFILES_ACTIVE: prod
-      spring.datasource.url: jdbc:postgresql://db:5433/swift_db1
+      spring.datasource.url: jdbc:postgresql://postgres:5432/swift_db
       spring.datasource.username: postgres
       spring.datasource.password: password
-    networks:
-      - swift-network
-
-networks:
-  swift-network:
-    driver: bridge
+    depends_on:
+      - postgres
+    restart: always
