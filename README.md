@@ -4,7 +4,7 @@
 * [General info](#-general-info)
 * [Features](#-features)
 * [Technologies](#-technologies)
-* [Setup](#-setup)
+* [How to run instructions](#-how-to-run-instructions)
 * [Running Tests](#-running-tests)
 * [API Endpoints](#-api-endpoints)
 
@@ -49,7 +49,7 @@ The application parses SWIFT codes from a provided file, stores them in a databa
   
 <br>
 
-## 🧰 Setup
+## 🧰 How to run instructions
 
 ### 1️⃣ Clone the Repository
 ```sh
